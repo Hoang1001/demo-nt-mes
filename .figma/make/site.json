@@ -1,0 +1,17 @@
+{
+  "title": "Material Flow Overview | NT-MES",
+  "description": "Visualize and optimize Material Flow across production systems, enhancing efficiency and decision-making for manufacturers through integrated software modules.",
+  "icons": {
+    "icon": "/NT_logo.png"
+  },
+  "openGraph": {
+    "image": "/NT_logo.png"
+  },
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
