@@ -1,5 +1,6 @@
-import CaptureGalleryModal from './CaptureGalleryModal'
+import CaptureGalleryModal, { localizeSlides } from './CaptureGalleryModal'
 import type { CaptureSlide } from './CaptureGalleryModal'
+import { useI18n } from './i18n'
 
 const SLIDES: CaptureSlide[] = [
   {
@@ -41,16 +42,16 @@ const SLIDES: CaptureSlide[] = [
 ]
 
 export default function PlanOnWorkstationModal({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n()
   return (
     <CaptureGalleryModal
       onClose={onClose}
       eyebrow="NT-MES · MO Schedule"
       title={['SCHEDULE ON', 'WORKSTATION']}
       accent="#6366f1"
-      subtitlePrefix="Lập lịch mức trạm trên NT-MES"
-      slides={SLIDES}
+      subtitlePrefix={t.gallery.wsSubtitle}
+      slides={localizeSlides(SLIDES, t)}
       statsRight="Operations · Workstations · Employees · Tasks"
-      hint="← → hoặc bấm hình để xem màn hình khác"
     />
   )
 }

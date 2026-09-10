@@ -6,6 +6,8 @@ import PlanOnWorkstationModal from './PlanOnWorkstationModal'
 import ProductionExecutionModal from './ProductionExecutionModal'
 import QualityTraceabilityModal from './QualityTraceabilityModal'
 import ProductionPerformanceModal from './ProductionPerformanceModal'
+import { LanguageToggle, useI18n } from './i18n'
+import type { Translations } from './i18n/translations'
 
 const VW = 1876
 const VH = 348
@@ -54,68 +56,65 @@ const shopTech = stackY(H4, H5)
 const lineWs = stackY(H3, H4)
 const qualityResult = stackY(H4, H4)
 
-const NODES: FlowNode[] = [
+const NODES_META: Omit<FlowNode, 'desc'>[] = [
   {
     id: 'shop', title: 'SHOP-FLOOR STRUCTURE',
     items: ['Plant', 'Division / Area', 'Line / Cell / Work Center', 'Workstation / Equipment'],
     x: 16, y: shopTech.top, w: SW, h: H4, color: '#2dd4bf', shape: 'card',
-    desc: 'Cấu trúc nhà máy theo cấp: Plant → Division / Area → Production Line / Cell / Work Center → Workstation / Equipment. Đây là khung nguồn lực vật lý trên shop-floor.',
   },
   {
     id: 'tech', title: 'TECHNOLOGY / PROCESS MODEL',
     items: ['Product', 'BOM / Material Input-Output', 'Operation Tree', 'Routing / Process Sequence', 'Time Norms / Requirements'],
     x: 16, y: shopTech.bot, w: SW, h: H5, color: '#a78bfa', shape: 'card',
-    desc: 'Mô hình công nghệ của sản phẩm: BOM và luồng vật tư vào–ra, cây công đoạn, routing, định mức thời gian và yêu cầu kỹ thuật.',
   },
   {
     id: 'bind', title: 'PROCESS ↔ RESOURCE BINDING',
     items: ['Technology Scope', 'Division / Production Line', 'Eligible Workstations'],
     x: 326, y: (VH - H3) / 2, w: MW, h: H3, color: '#818cf8', shape: 'card',
-    desc: 'Gắn quy trình công nghệ với nguồn lực đủ điều kiện: phạm vi technology, division / production line và các workstation được phép thực hiện.',
   },
   {
     id: 'order', title: 'MANUFACTURING ORDER',
     items: ['Product', 'Technology', 'Quantity', 'Planned Dates'],
     x: 606, y: (VH - H4) / 2, w: 216, h: H4, color: '#0ea5e9', shape: 'card',
-    desc: 'Lệnh sản xuất mang theo sản phẩm, technology áp dụng, số lượng và mốc thời gian kế hoạch — đầu vào cho bước lập lịch.',
   },
   {
     id: 'plan', title: 'SCHEDULING APPROACH',
     items: [],
     x: 858, y: (VH - 100) / 2, w: 132, h: 100, color: '#fbbf24', shape: 'diamond',
-    desc: 'Chọn cách lập lịch: gán lệnh cho dây chuyền (production line) hoặc chi tiết xuống workstation, nhân sự và operational tasks.',
   },
   {
     id: 'line', title: 'SCHEDULE ON PRODUCTION LINE',
     items: ['Manufacturing Order', '→ Production Line', '→ Start / End Time'],
     x: 1024, y: lineWs.top, w: SW, h: H3, color: '#38bdf8', shape: 'card',
-    desc: 'Lập lịch mức dây chuyền: gán Manufacturing Order cho Production Line kèm Start / End Time.',
   },
   {
     id: 'ws', title: 'SCHEDULE ON WORKSTATION',
     items: ['Operations', '→ Workstations', '→ Employees', '→ Operational Tasks'],
     x: 1024, y: lineWs.bot, w: SW, h: H4, color: '#6366f1', shape: 'card',
-    desc: 'Lập lịch mức trạm: bung operations xuống workstation, gán nhân sự và tạo operational tasks.',
   },
   {
     id: 'exec', title: 'PRODUCTION EXECUTION',
     items: ['Production Tracking', 'Start / Stop', 'Good / Scrap', 'Material Consumption'],
     x: 1336, y: (VH - H4) / 2, w: 220, h: H4, color: '#fb923c', shape: 'card',
-    desc: 'Thực thi sản xuất: tracking tiến độ, start/stop, ghi nhận hàng tốt / phế phẩm và tiêu hao vật tư.',
   },
   {
     id: 'quality', title: 'QUALITY / TRACEABILITY',
     items: ['Inspection', 'LOT / Batch', 'Genealogy', 'Nonconformance'],
     x: 1596, y: qualityResult.top, w: SW, h: H4, color: '#4ade80', shape: 'card',
-    desc: 'Chất lượng và truy xuất: kiểm tra, LOT / batch, genealogy đầu vào–đầu ra và xử lý nonconformance.',
   },
   {
     id: 'result', title: 'PRODUCTION PERFORMANCE',
     items: ['Quantity', 'Time / Downtime', 'WIP', 'KPI / OEE'],
     x: 1596, y: qualityResult.bot, w: SW, h: H4, color: '#f472b6', shape: 'card',
-    desc: 'Hiệu suất sản xuất: sản lượng, thời gian, downtime, WIP và các KPI / OEE phục vụ đánh giá hiệu quả vận hành.',
   },
 ]
+
+function buildNodes(t: Translations): FlowNode[] {
+  return NODES_META.map(n => ({
+    ...n,
+    desc: t.process.nodes[n.id as keyof typeof t.process.nodes].desc,
+  }))
+}
 
 const EDGES: { from: string; to: string }[] = [
   { from: 'shop', to: 'bind' },
@@ -130,23 +129,23 @@ const EDGES: { from: string; to: string }[] = [
   { from: 'exec', to: 'result' },
 ]
 
-const NODE_MAP = Object.fromEntries(NODES.map(n => [n.id, n])) as Record<string, FlowNode>
+const NODE_MAP_STATIC = Object.fromEntries(NODES_META.map(n => [n.id, n])) as Record<string, Omit<FlowNode, 'desc'>>
 
-function port(n: FlowNode, side: 'left' | 'right') {
+function port(n: { x: number; y: number; w: number; h: number }, side: 'left' | 'right') {
   return {
     x: side === 'left' ? n.x : n.x + n.w,
     y: n.y + n.h / 2,
   }
 }
 
-function stepPath(from: FlowNode, to: FlowNode) {
+function stepPath(from: { x: number; y: number; w: number; h: number }, to: { x: number; y: number; w: number; h: number }) {
   const a = port(from, 'right')
   const b = port(to, 'left')
   const midX = (a.x + b.x) / 2
   return `M ${a.x} ${a.y} L ${midX} ${a.y} L ${midX} ${b.y} L ${b.x} ${b.y}`
 }
 
-function diamondPoints(n: FlowNode) {
+function diamondPoints(n: { x: number; y: number; w: number; h: number }) {
   const cx = n.x + n.w / 2
   const cy = n.y + n.h / 2
   return `${cx},${n.y} ${n.x + n.w},${cy} ${cx},${n.y + n.h} ${n.x},${cy}`
@@ -162,17 +161,10 @@ const DETAIL_PAGES: Record<string, true> = {
   result: true,
 }
 
-const DETAIL_HINTS: Record<string, string> = {
-  shop: 'Nhấn để xem cấu hình nhà máy trên NT-MES →',
-  tech: 'Nhấn để xem mô hình công nghệ trên NT-MES →',
-  order: 'Nhấn để xem lệnh sản xuất trên NT-MES →',
-  ws: 'Nhấn để xem lập lịch mức trạm trên NT-MES →',
-  exec: 'Nhấn để xem thực thi sản xuất trên NT-MES →',
-  quality: 'Nhấn để xem chất lượng và truy xuất trên NT-MES →',
-  result: 'Nhấn để xem hiệu suất sản xuất trên NT-MES →',
-}
-
 export default function ProcessFlowModal({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n()
+  const NODES = buildNodes(t)
+  const NODE_MAP = Object.fromEntries(NODES.map(n => [n.id, n])) as Record<string, FlowNode>
   const [hoverId, setHoverId] = useState<string | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
   const hover = hoverId ? NODE_MAP[hoverId] : null
@@ -195,6 +187,11 @@ export default function ProcessFlowModal({ onClose }: { onClose: () => void }) {
 
   const openDetail = (id: string) => {
     if (DETAIL_PAGES[id]) setOpenId(id)
+  }
+
+  const detailHint = (id: string) => {
+    const hint = t.process.nodes[id as keyof typeof t.process.nodes]?.hint
+    return hint || undefined
   }
 
   return (
@@ -229,10 +226,13 @@ export default function ProcessFlowModal({ onClose }: { onClose: () => void }) {
             </span>
           </div>
           <div style={{ fontSize: '16px', color: '#7aadde', marginTop: '6px', lineHeight: 1.5 }}>
-            Technology + Shop-floor Structure → Resource Binding → Manufacturing Order → Scheduling → Execution → Quality / Performance
+            {t.process.subtitle}
           </div>
         </div>
-        <button onClick={onClose} className="back-btn">← Quay lại</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+          <LanguageToggle compact />
+          <button onClick={onClose} className="back-btn">{t.common.back}</button>
+        </div>
       </div>
 
       <div style={{ height: '1px', background: '#1a3048', flexShrink: 0, marginBottom: '8px' }} />
@@ -245,8 +245,8 @@ export default function ProcessFlowModal({ onClose }: { onClose: () => void }) {
         </defs>
 
         {EDGES.map(e => {
-          const from = NODE_MAP[e.from]
-          const to = NODE_MAP[e.to]
+          const from = NODE_MAP_STATIC[e.from]
+          const to = NODE_MAP_STATIC[e.to]
           const hot = hoverId !== null && (e.from === hoverId || e.to === hoverId)
           const dim = hoverId !== null && !hot
           return (
@@ -351,12 +351,12 @@ export default function ProcessFlowModal({ onClose }: { onClose: () => void }) {
               <span style={{ color: hover.color, fontSize: 15, fontWeight: 700 }}>
                 {hover.title}
               </span>
-              {DETAIL_HINTS[hover.id] && (
+              {detailHint(hover.id) && (
                 <span style={{
                   marginLeft: 'auto', color: '#7aadde', fontSize: 11,
                   fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.4px',
                 }}>
-                  {DETAIL_HINTS[hover.id]}
+                  {detailHint(hover.id)}
                 </span>
               )}
             </div>
@@ -370,7 +370,7 @@ export default function ProcessFlowModal({ onClose }: { onClose: () => void }) {
           </div>
         ) : (
           <div className="hint-text">
-            di chuột khối để xem mô tả · nhấn khối có ↗ để xem màn hình NT-MES →
+            {t.process.hoverHint}
           </div>
         )}
       </div>

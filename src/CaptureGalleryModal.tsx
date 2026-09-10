@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
+import { LanguageToggle, chipLabel, useI18n } from './i18n'
+import type { Translations } from './i18n/translations'
 
 export type CaptureChip = {
   code: string
@@ -30,6 +32,18 @@ function asset(file: string) {
   return `${import.meta.env.BASE_URL}${file}`
 }
 
+/** Localize chip labels (and known VI→EN example strings) for the active language. */
+export function localizeSlides(slides: CaptureSlide[], t: Translations): CaptureSlide[] {
+  return slides.map(s => ({
+    ...s,
+    chips: s.chips.map(c => ({
+      ...c,
+      label: chipLabel(t, c.code),
+      example: t.examples[c.example] ?? c.example,
+    })),
+  }))
+}
+
 export default function CaptureGalleryModal({
   onClose,
   eyebrow,
@@ -38,10 +52,12 @@ export default function CaptureGalleryModal({
   subtitlePrefix,
   slides,
   statsRight,
-  hint = '← → hoặc bấm hình để xem màn hình khác',
+  hint,
 }: Props) {
+  const { t } = useI18n()
   const [idx, setIdx] = useState(0)
   const slide = slides[idx]
+  const resolvedHint = hint ?? t.common.galleryHint
   const rootStyle = {
     '--gallery-accent': accent,
     position: 'fixed',
@@ -109,7 +125,10 @@ export default function CaptureGalleryModal({
             {subtitlePrefix} — {slide.code} · {slide.name}
           </div>
         </div>
-        <button onClick={onClose} className="back-btn">← Quay lại</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+          <LanguageToggle compact />
+          <button onClick={onClose} className="back-btn">{t.common.back}</button>
+        </div>
       </div>
 
       <div style={{
@@ -188,7 +207,7 @@ export default function CaptureGalleryModal({
             <button
               type="button"
               className="gallery-arrow gallery-arrow-left"
-              aria-label="Màn hình trước"
+              aria-label={t.common.prevSlide}
               onClick={e => { e.stopPropagation(); go(-1) }}
             >
               ‹
@@ -196,7 +215,7 @@ export default function CaptureGalleryModal({
             <button
               type="button"
               className="gallery-arrow gallery-arrow-right"
-              aria-label="Màn hình tiếp"
+              aria-label={t.common.nextSlide}
               onClick={e => { e.stopPropagation(); go(1) }}
             >
               ›
@@ -230,7 +249,7 @@ export default function CaptureGalleryModal({
           fontFamily: 'JetBrains Mono, monospace',
           letterSpacing: '0.3px',
         }}>
-          {hint}
+          {resolvedHint}
         </div>
       </div>
     </div>

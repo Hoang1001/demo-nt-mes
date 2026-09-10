@@ -1,5 +1,6 @@
-import CaptureGalleryModal from './CaptureGalleryModal'
+import CaptureGalleryModal, { localizeSlides } from './CaptureGalleryModal'
 import type { CaptureSlide } from './CaptureGalleryModal'
+import { useI18n } from './i18n'
 
 const SLIDES: CaptureSlide[] = [
   {
@@ -65,16 +66,16 @@ const SLIDES: CaptureSlide[] = [
 ]
 
 export default function ProductionExecutionModal({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n()
   return (
     <CaptureGalleryModal
       onClose={onClose}
       eyebrow="NT-MES · Production Tracking"
       title={['PRODUCTION', 'EXECUTION']}
       accent="#fb923c"
-      subtitlePrefix="Thực thi sản xuất trên NT-MES"
-      slides={SLIDES}
+      subtitlePrefix={t.gallery.execSubtitle}
+      slides={localizeSlides(SLIDES, t)}
       statsRight="Tracking · Start/Stop · Good/Scrap · Consumption"
-      hint="← → hoặc bấm hình để xem màn hình khác"
     />
   )
 }

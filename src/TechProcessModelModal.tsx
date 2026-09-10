@@ -1,5 +1,6 @@
-import CaptureGalleryModal from './CaptureGalleryModal'
+import CaptureGalleryModal, { localizeSlides } from './CaptureGalleryModal'
 import type { CaptureSlide } from './CaptureGalleryModal'
+import { useI18n } from './i18n'
 
 const SLIDES: CaptureSlide[] = [
   {
@@ -29,16 +30,16 @@ const SLIDES: CaptureSlide[] = [
 ]
 
 export default function TechProcessModelModal({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n()
   return (
     <CaptureGalleryModal
       onClose={onClose}
       eyebrow="NT-MES · BOM & Technology"
       title={['TECHNOLOGY /', 'PROCESS MODEL']}
       accent="#a78bfa"
-      subtitlePrefix="Mô hình công nghệ trên NT-MES"
-      slides={SLIDES}
+      subtitlePrefix={t.gallery.techSubtitle}
+      slides={localizeSlides(SLIDES, t)}
       statsRight="Product · BOM · Operation Tree · Routing"
-      hint="← → hoặc bấm hình để xem màn hình khác"
     />
   )
 }

@@ -1,5 +1,6 @@
-import CaptureGalleryModal from './CaptureGalleryModal'
+import CaptureGalleryModal, { localizeSlides } from './CaptureGalleryModal'
 import type { CaptureSlide } from './CaptureGalleryModal'
+import { useI18n } from './i18n'
 
 const SLIDES: CaptureSlide[] = [
   {
@@ -65,16 +66,24 @@ const SLIDES: CaptureSlide[] = [
 ]
 
 export default function ProductionPerformanceModal({ onClose }: { onClose: () => void }) {
+  const { t, lang } = useI18n()
+  const slides = localizeSlides(SLIDES, t).map(s => ({
+    ...s,
+    chips: s.chips.map(c =>
+      c.code === 'Quantity'
+        ? { ...c, label: lang === 'vi' ? 'Sản lượng' : 'Quantity' }
+        : c
+    ),
+  }))
   return (
     <CaptureGalleryModal
       onClose={onClose}
       eyebrow="NT-MES · Production Performance"
       title={['PRODUCTION', 'PERFORMANCE']}
       accent="#f472b6"
-      subtitlePrefix="Hiệu suất sản xuất trên NT-MES"
-      slides={SLIDES}
+      subtitlePrefix={t.gallery.resultSubtitle}
+      slides={slides}
       statsRight="Quantity · Downtime · WIP · KPI / OEE"
-      hint="← → hoặc bấm hình để xem màn hình khác"
     />
   )
 }

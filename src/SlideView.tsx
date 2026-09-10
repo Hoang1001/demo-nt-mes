@@ -1,63 +1,37 @@
 import { useEffect, useState } from 'react'
 import MESModal from './MESModal'
+import { LanguageToggle, useI18n } from './i18n'
+import type { Translations } from './i18n/translations'
 
-// ─── SHARED DATA (mirrored from App.tsx) ─────────────────────────────────────
-const MODULES = [
-  { n: 1,  label: 'MRP / MRP II',    cat: 'Kế hoạch',              color: '#818cf8', desc: 'Tính toán nhu cầu nguyên liệu từ kế hoạch sản xuất và BOM, tạo lệnh mua hàng và lệnh sản xuất. Đây là bước điều tiết dòng chảy trước khi vật liệu thực sự di chuyển.' },
-  { n: 2,  label: 'APS',             cat: 'Kế hoạch',              color: '#6366f1', desc: 'Lập lịch chi tiết dựa trên năng lực máy và tình trạng nguyên liệu thực tế, điều chỉnh thứ tự và thời điểm dòng vật liệu đi qua từng công đoạn để tối ưu throughput.' },
-  { n: 3,  label: 'PDM',             cat: 'Kế hoạch',              color: '#a78bfa', desc: 'Định nghĩa BOM và Routing – bản đồ chỉ ra dòng vật liệu phải đi qua những công đoạn biến đổi nào, theo thứ tự nào, để từ nguyên liệu thô trở thành sản phẩm hoàn chỉnh.' },
-  { n: 4,  label: 'MES',             cat: 'Thực thi SX',           color: '#fb923c', desc: 'Quan sát dòng vật liệu bên trong nhà máy theo thời gian thực: vật liệu nào đang ở máy nào, WIP đang ở công đoạn nào, mức tiêu hao thực tế so với định mức.' },
-  { n: 5,  label: 'MHS',             cat: 'Vận chuyển nội bộ',     color: '#f97316', desc: 'Điều phối thiết bị vận chuyển nội bộ – băng tải, AGV, xe nâng, sorter – để dịch chuyển vật liệu giữa các điểm dọc dòng chảy. Nhận lệnh từ MES và phản hồi trạng thái theo thời gian thực.' },
-  { n: 6,  label: 'WMS',             cat: 'Kho & Tồn kho',         color: '#2dd4bf', desc: 'Quản lý các điểm dừng của dòng chảy: vị trí lưu trữ, giao dịch nhận – xuất – chuyển kho, kitting và picking. Đồng thời ghi nhận số lượng và giá trị tồn kho tại mọi điểm trên dòng.' },
-  { n: 7,  label: 'QMS',             cat: 'Chất lượng',            color: '#4ade80', desc: 'Đặt trạm kiểm soát tại các điểm trọng yếu trên dòng chảy – nhận hàng, trong công đoạn sản xuất, thành phẩm. Kết quả kiểm tra quyết định vật liệu có được phép tiếp tục hay bị giữ lại.' },
-  { n: 8,  label: 'TMS',             cat: 'Logistics',             color: '#38bdf8', desc: 'Quản lý dòng vật liệu ngoài nhà máy – từ nhà cung cấp vào (inbound) và từ kho thành phẩm đến khách hàng (outbound). Tối ưu tuyến đường và phương tiện để đúng lúc, đúng địa điểm.' },
-  { n: 9,  label: 'Traceability',    cat: 'Truy xuất',             color: '#f472b6', desc: 'Gắn nhãn định danh (số lô, serial, RFID, barcode) vào từng đơn vị vật liệu để ghi lại toàn bộ hành trình dọc dòng chảy. Khi có sự cố, truy ngược được chính xác điểm nào bị lỗi.' },
-  { n: 10, label: 'FI/CO',           cat: 'Tài chính & Kiểm soát', color: '#fbbf24', desc: 'Chuyển hóa mỗi chuyển động vật liệu thành giá trị tài chính: tính giá thành theo tiêu hao thực tế (actual costing) hoặc định mức (standard costing). Mọi giao dịch vật liệu đều sinh bút toán kế toán tương ứng.' },
-]
-
-const STAGES = [
-  { x: 36,  labels: ['Nhà', 'cung cấp'], ext: true },
-  { x: 132, labels: ['Kho', 'NVL'] },
-  { x: 228, labels: ['SX', 'Cđ. 1'] },
-  { x: 324, labels: ['WIP', 'Cđ. 2'] },
-  { x: 420, labels: ['SX', 'Cđ. 3'] },
-  { x: 516, labels: ['KCS'] },
-  { x: 612, labels: ['Kho', 'Thành phẩm'] },
-  { x: 708, labels: ['Khách', 'hàng'], ext: true },
+// ─── STATIC LAYOUT (language-independent) ────────────────────────────────────
+const STAGE_META = [
+  { x: 36, ext: true },
+  { x: 132, ext: false },
+  { x: 228, ext: false },
+  { x: 324, ext: false },
+  { x: 420, ext: false },
+  { x: 516, ext: false },
+  { x: 612, ext: false },
+  { x: 708, ext: true },
 ]
 
 const CHIPS_ABOVE = [
-  { id: 'plm',   label: 'PDM',           cx: 185, color: '#a78bfa', anchors: [132, 228, 324, 420] },
-  { id: 'mrp',   label: 'MRP / MRP II',  cx: 298, color: '#818cf8', anchors: [132, 228, 324] },
-  { id: 'aps',   label: 'APS',           cx: 404, color: '#6366f1', anchors: [228, 324, 420] },
-  { id: 'trace', label: 'Traceability',  cx: 510, color: '#f472b6', anchors: [132, 228, 324, 420, 516, 612] },
-  { id: 'fico',  label: 'FI/CO',         cx: 638, color: '#fbbf24', anchors: [132, 324, 612] },
+  { id: 'plm', label: 'PDM', cx: 185, color: '#a78bfa', anchors: [132, 228, 324, 420] },
+  { id: 'mrp', label: 'MRP / MRP II', cx: 298, color: '#818cf8', anchors: [132, 228, 324] },
+  { id: 'aps', label: 'APS', cx: 404, color: '#6366f1', anchors: [228, 324, 420] },
+  { id: 'trace', label: 'Traceability', cx: 510, color: '#f472b6', anchors: [132, 228, 324, 420, 516, 612] },
+  { id: 'fico', label: 'FI/CO', cx: 638, color: '#fbbf24', anchors: [132, 324, 612] },
 ]
 
 const CHIPS_BELOW = [
-  { id: 'tms_in',  label: 'TMS', cx: 80,  color: '#38bdf8', anchors: [36, 132] },
-  { id: 'wms_in',  label: 'WMS', cx: 155, color: '#2dd4bf', anchors: [132] },
-  { id: 'qms',     label: 'QMS', cx: 228, color: '#4ade80', anchors: [132, 516] },
-  { id: 'mes',     label: 'MES', cx: 350, color: '#fb923c', anchors: [228, 324, 420] },
-  { id: 'mhs',     label: 'MHS', cx: 420, color: '#f97316', anchors: [132, 228, 324, 420, 612] },
+  { id: 'tms_in', label: 'TMS', cx: 80, color: '#38bdf8', anchors: [36, 132] },
+  { id: 'wms_in', label: 'WMS', cx: 155, color: '#2dd4bf', anchors: [132] },
+  { id: 'qms', label: 'QMS', cx: 228, color: '#4ade80', anchors: [132, 516] },
+  { id: 'mes', label: 'MES', cx: 350, color: '#fb923c', anchors: [228, 324, 420] },
+  { id: 'mhs', label: 'MHS', cx: 420, color: '#f97316', anchors: [132, 228, 324, 420, 612] },
   { id: 'wms_out', label: 'WMS', cx: 580, color: '#2dd4bf', anchors: [612] },
   { id: 'tms_out', label: 'TMS', cx: 680, color: '#38bdf8', anchors: [612, 708] },
 ]
-
-const CHIP_INFO: Record<string, { title: string; cat: string; color: string; desc: string }> = {
-  plm:     { title: 'PDM',                    cat: 'Kế hoạch',              color: '#a78bfa', desc: MODULES[2].desc },
-  mrp:     { title: 'MRP / MRP II',           cat: 'Kế hoạch',              color: '#818cf8', desc: MODULES[0].desc },
-  aps:     { title: 'APS',                    cat: 'Kế hoạch',              color: '#6366f1', desc: MODULES[1].desc },
-  trace:   { title: 'Traceability',           cat: 'Truy xuất',             color: '#f472b6', desc: MODULES[8].desc },
-  fico:    { title: 'FI/CO',                  cat: 'Tài chính & Kiểm soát', color: '#fbbf24', desc: MODULES[9].desc },
-  tms_in:  { title: 'TMS – Inbound',          cat: 'Logistics',             color: '#38bdf8', desc: MODULES[7].desc },
-  wms_in:  { title: 'WMS – Kho Nguyên liệu',  cat: 'Kho & Tồn kho',        color: '#2dd4bf', desc: MODULES[5].desc },
-  qms:     { title: 'QMS',                    cat: 'Chất lượng',            color: '#4ade80', desc: MODULES[6].desc },
-  mes:     { title: 'MES',                    cat: 'Thực thi Sản xuất',     color: '#fb923c', desc: MODULES[3].desc },
-  mhs:     { title: 'MHS',                    cat: 'Vận chuyển nội bộ',     color: '#f97316', desc: MODULES[4].desc },
-  wms_out: { title: 'WMS – Kho Thành phẩm',   cat: 'Kho & Tồn kho',        color: '#2dd4bf', desc: MODULES[5].desc },
-  tms_out: { title: 'TMS – Outbound',         cat: 'Logistics',             color: '#38bdf8', desc: MODULES[7].desc },
-}
 
 type Chip = { id: string; label: string; cx: number; color: string; anchors: number[] }
 
@@ -87,23 +61,56 @@ function measureLabelWidth(label: string): number {
   return ctx.measureText(label).width
 }
 
-const ROLES = [
-  { sys: 'PDM',          role: 'Định nghĩa vật liệu cần đi qua những công đoạn biến đổi nào', color: '#a78bfa', chips: ['plm'], cat: 'Kế hoạch', desc: MODULES[2].desc },
-  { sys: 'MRP / APS',    role: 'Dự báo và điều tiết dòng chảy', color: '#818cf8', chips: ['mrp', 'aps'], cat: 'Kế hoạch', desc: MODULES[0].desc },
-  { sys: 'TMS',          role: 'Vận chuyển vật liệu ngoài nhà máy (inbound / outbound)', color: '#38bdf8', chips: ['tms_in', 'tms_out'], cat: 'Logistics', desc: MODULES[7].desc },
-  { sys: 'WMS',          role: 'Quản lý các điểm lưu trữ dọc dòng chảy', color: '#2dd4bf', chips: ['wms_in', 'wms_out'], cat: 'Kho & Tồn kho', desc: MODULES[5].desc },
-  { sys: 'MHS',          role: 'Vận chuyển vật liệu giữa các điểm trong nhà máy', color: '#f97316', chips: ['mhs'], cat: 'Vận chuyển nội bộ', desc: MODULES[4].desc },
-  { sys: 'MES',          role: 'Quản lý nơi dòng vật liệu được biến đổi', color: '#fb923c', chips: ['mes'], cat: 'Thực thi Sản xuất', desc: MODULES[3].desc, clickable: true },
-  { sys: 'QMS',          role: 'Cho dòng chảy tiếp tục hoặc giữ lại', color: '#4ade80', chips: ['qms'], cat: 'Chất lượng', desc: MODULES[6].desc },
-  { sys: 'FI/CO',        role: 'Ghi nhận giá trị tài chính của từng chuyển động vật liệu', color: '#fbbf24', chips: ['fico'], cat: 'Tài chính & Kiểm soát', desc: MODULES[9].desc },
-  { sys: 'Traceability', role: 'Quan sát toàn bộ hành trình của dòng chảy', color: '#f472b6', chips: ['trace'], cat: 'Truy xuất', desc: MODULES[8].desc },
-]
+function buildContent(t: Translations) {
+  const modules = [
+    { n: 1, label: 'MRP / MRP II', cat: t.cats.plan, color: '#818cf8', desc: t.modules.mrp },
+    { n: 2, label: 'APS', cat: t.cats.plan, color: '#6366f1', desc: t.modules.aps },
+    { n: 3, label: 'PDM', cat: t.cats.plan, color: '#a78bfa', desc: t.modules.pdm },
+    { n: 4, label: 'MES', cat: t.cats.exec, color: '#fb923c', desc: t.modules.mes },
+    { n: 5, label: 'MHS', cat: t.cats.mhs, color: '#f97316', desc: t.modules.mhs },
+    { n: 6, label: 'WMS', cat: t.cats.wms, color: '#2dd4bf', desc: t.modules.wms },
+    { n: 7, label: 'QMS', cat: t.cats.qms, color: '#4ade80', desc: t.modules.qms },
+    { n: 8, label: 'TMS', cat: t.cats.logistics, color: '#38bdf8', desc: t.modules.tms },
+    { n: 9, label: 'Traceability', cat: t.cats.trace, color: '#f472b6', desc: t.modules.trace },
+    { n: 10, label: 'FI/CO', cat: t.cats.fico, color: '#fbbf24', desc: t.modules.fico },
+  ]
+
+  const chipInfo: Record<string, { title: string; cat: string; color: string; desc: string }> = {
+    plm: { title: 'PDM', cat: t.cats.plan, color: '#a78bfa', desc: modules[2].desc },
+    mrp: { title: 'MRP / MRP II', cat: t.cats.plan, color: '#818cf8', desc: modules[0].desc },
+    aps: { title: 'APS', cat: t.cats.plan, color: '#6366f1', desc: modules[1].desc },
+    trace: { title: 'Traceability', cat: t.cats.trace, color: '#f472b6', desc: modules[8].desc },
+    fico: { title: 'FI/CO', cat: t.cats.fico, color: '#fbbf24', desc: modules[9].desc },
+    tms_in: { title: t.chipTitles.tms_in, cat: t.cats.logistics, color: '#38bdf8', desc: modules[7].desc },
+    wms_in: { title: t.chipTitles.wms_in, cat: t.cats.wms, color: '#2dd4bf', desc: modules[5].desc },
+    qms: { title: 'QMS', cat: t.cats.qms, color: '#4ade80', desc: modules[6].desc },
+    mes: { title: 'MES', cat: t.cats.execFull, color: '#fb923c', desc: modules[3].desc },
+    mhs: { title: 'MHS', cat: t.cats.mhs, color: '#f97316', desc: modules[4].desc },
+    wms_out: { title: t.chipTitles.wms_out, cat: t.cats.wms, color: '#2dd4bf', desc: modules[5].desc },
+    tms_out: { title: t.chipTitles.tms_out, cat: t.cats.logistics, color: '#38bdf8', desc: modules[7].desc },
+  }
+
+  const roles = [
+    { sys: 'PDM', role: t.roles.pdm, color: '#a78bfa', chips: ['plm'], cat: t.cats.plan, desc: modules[2].desc },
+    { sys: 'MRP / APS', role: t.roles.mrpAps, color: '#818cf8', chips: ['mrp', 'aps'], cat: t.cats.plan, desc: modules[0].desc },
+    { sys: 'TMS', role: t.roles.tms, color: '#38bdf8', chips: ['tms_in', 'tms_out'], cat: t.cats.logistics, desc: modules[7].desc },
+    { sys: 'WMS', role: t.roles.wms, color: '#2dd4bf', chips: ['wms_in', 'wms_out'], cat: t.cats.wms, desc: modules[5].desc },
+    { sys: 'MHS', role: t.roles.mhs, color: '#f97316', chips: ['mhs'], cat: t.cats.mhs, desc: modules[4].desc },
+    { sys: 'MES', role: t.roles.mes, color: '#fb923c', chips: ['mes'], cat: t.cats.execFull, desc: modules[3].desc, clickable: true },
+    { sys: 'QMS', role: t.roles.qms, color: '#4ade80', chips: ['qms'], cat: t.cats.qms, desc: modules[6].desc },
+    { sys: 'FI/CO', role: t.roles.fico, color: '#fbbf24', chips: ['fico'], cat: t.cats.fico, desc: modules[9].desc },
+    { sys: 'Traceability', role: t.roles.trace, color: '#f472b6', chips: ['trace'], cat: t.cats.trace, desc: modules[8].desc },
+  ]
+
+  return { chipInfo, roles }
+}
 
 // ─── FLOW DIAGRAM ─────────────────────────────────────────────────────────────
-function FlowDiagram({ activeChips, onHover, onChipClick }: {
+function FlowDiagram({ activeChips, onHover, onChipClick, stageLabels }: {
   activeChips: string[]
   onHover: (id: string | null) => void
   onChipClick?: (id: string) => void
+  stageLabels: string[][]
 }) {
   const TY = 148
   const VW = 744
@@ -166,9 +173,9 @@ function FlowDiagram({ activeChips, onHover, onChipClick }: {
     <svg viewBox={`0 0 ${VW} ${VH}`} style={{ width: '100%', display: 'block' }}>
       <defs>
         <linearGradient id="tg-slide" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%"   stopColor="#0369a1" stopOpacity="0.4" />
-          <stop offset="12%"  stopColor="#0ea5e9" />
-          <stop offset="88%"  stopColor="#0ea5e9" />
+          <stop offset="0%" stopColor="#0369a1" stopOpacity="0.4" />
+          <stop offset="12%" stopColor="#0ea5e9" />
+          <stop offset="88%" stopColor="#0ea5e9" />
           <stop offset="100%" stopColor="#0369a1" stopOpacity="0.4" />
         </linearGradient>
         <filter id="fg-slide" x="-50%" y="-50%" width="200%" height="200%">
@@ -178,17 +185,17 @@ function FlowDiagram({ activeChips, onHover, onChipClick }: {
       </defs>
 
       {Array.from({ length: 20 }).map((_, i) => {
-        const x = STAGES[0].x + (i + 1) * ((STAGES[STAGES.length - 1].x - STAGES[0].x) / 21)
+        const x = STAGE_META[0].x + (i + 1) * ((STAGE_META[STAGE_META.length - 1].x - STAGE_META[0].x) / 21)
         return <line key={i} x1={x} y1={TY - 7} x2={x} y2={TY + 7} stroke="#163550" strokeWidth="2.5" strokeLinecap="round" />
       })}
 
       {[-5, 5].map(dy => (
-        <line key={dy} x1={STAGES[0].x} y1={TY + dy} x2={STAGES[STAGES.length - 1].x} y2={TY + dy} stroke="#0c4a6e" strokeWidth="1.2" />
+        <line key={dy} x1={STAGE_META[0].x} y1={TY + dy} x2={STAGE_META[STAGE_META.length - 1].x} y2={TY + dy} stroke="#0c4a6e" strokeWidth="1.2" />
       ))}
 
-      <line x1={STAGES[0].x} y1={TY} x2={STAGES[STAGES.length - 1].x} y2={TY} stroke="#0284c7" strokeWidth="14" strokeOpacity="0.1" />
-      <line x1={STAGES[0].x} y1={TY} x2={STAGES[STAGES.length - 1].x} y2={TY} stroke="url(#tg-slide)" strokeWidth="2.5" />
-      <line x1={STAGES[0].x} y1={TY} x2={STAGES[STAGES.length - 1].x} y2={TY}
+      <line x1={STAGE_META[0].x} y1={TY} x2={STAGE_META[STAGE_META.length - 1].x} y2={TY} stroke="#0284c7" strokeWidth="14" strokeOpacity="0.1" />
+      <line x1={STAGE_META[0].x} y1={TY} x2={STAGE_META[STAGE_META.length - 1].x} y2={TY} stroke="url(#tg-slide)" strokeWidth="2.5" />
+      <line x1={STAGE_META[0].x} y1={TY} x2={STAGE_META[STAGE_META.length - 1].x} y2={TY}
         stroke="#7dd3fc" strokeWidth="1.5" strokeOpacity="0.65"
         strokeDasharray="10,38"
         style={{ animation: 'flowMove 1.6s linear infinite' }} />
@@ -205,18 +212,18 @@ function FlowDiagram({ activeChips, onHover, onChipClick }: {
       {CHIPS_ABOVE.map(c => chipBox(c, ABOVE_Y))}
       {CHIPS_BELOW.map(c => chipBox(c, BELOW_Y))}
 
-      {STAGES.map((s, i) => (
+      {STAGE_META.map((s, i) => (
         <g key={i}>
           <circle cx={s.x} cy={TY} r={s.ext ? 9 : 13}
             fill={s.ext ? '#101c2c' : '#0e3a5c'}
             stroke={s.ext ? '#3d6a94' : '#0ea5e9'}
             strokeWidth={s.ext ? 1.2 : 2} />
           {!s.ext && <circle cx={s.x} cy={TY} r={3.5} fill="#38bdf8" filter="url(#fg-slide)" />}
-          {s.labels.map((ln, j) => (
+          {(stageLabels[i] ?? []).map((ln, j) => (
             <text key={j} x={s.x} y={TY + 32 + j * 14}
               textAnchor="middle"
               fill={s.ext ? '#7aadde' : '#cbd5e1'}
-              fontSize="10" fontWeight={s.ext ? 500 : 500}
+              fontSize="10" fontWeight={500}
               fontFamily="Inter, sans-serif">
               {ln}
             </text>
@@ -231,9 +238,16 @@ function FlowDiagram({ activeChips, onHover, onChipClick }: {
 type PanelInfo = { title: string; cat: string; color: string; desc: string; hint?: string }
 
 export default function SlideView() {
+  const { t } = useI18n()
+  const { chipInfo, roles } = buildContent(t)
   const [activeChips, setActiveChips] = useState<string[]>([])
   const [panelInfo, setPanelInfo] = useState<PanelInfo | null>(null)
   const [mesOpen, setMesOpen] = useState(false)
+
+  useEffect(() => {
+    setActiveChips([])
+    setPanelInfo(null)
+  }, [t])
 
   const hoverChip = (id: string | null) => {
     if (!id) {
@@ -242,14 +256,14 @@ export default function SlideView() {
       return
     }
     setActiveChips([id])
-    const info = CHIP_INFO[id]
+    const info = chipInfo[id]
     setPanelInfo(info ? {
       ...info,
-      hint: id === 'mes' ? 'Nhấn để mở NT-MES' : undefined,
+      hint: id === 'mes' ? t.slide.openMes : undefined,
     } : null)
   }
 
-  const hoverRole = (r: typeof ROLES[0] | null) => {
+  const hoverRole = (r: (typeof roles)[0] | null) => {
     if (!r) {
       setActiveChips([])
       setPanelInfo(null)
@@ -261,7 +275,7 @@ export default function SlideView() {
       cat: r.cat,
       color: r.color,
       desc: r.desc,
-      hint: r.clickable ? 'Nhấn để mở NT-MES' : undefined,
+      hint: r.clickable ? t.slide.openMes : undefined,
     })
   }
 
@@ -286,7 +300,7 @@ export default function SlideView() {
             fontSize: '10px', color: '#7aadde', letterSpacing: '4px',
             fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', marginBottom: '6px',
           }}>
-            Hệ thống Quản lý Sản xuất Tích hợp
+            {t.slide.eyebrow}
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
             <span style={{ fontSize: '44px', fontWeight: 800, color: '#f1f5f9', letterSpacing: '-2px', lineHeight: 1 }}>
@@ -297,14 +311,17 @@ export default function SlideView() {
             </span>
           </div>
           <div style={{ fontSize: '16px', color: '#7aadde', marginTop: '6px', lineHeight: 1.5 }}>
-            Dòng sông vật lý của nhà máy — mọi hệ thống phần mềm đều được xây dựng xung quanh để quan sát, điều tiết và phản ánh nó
+            {t.slide.tagline}
           </div>
         </div>
-        <img
-          src={`${import.meta.env.BASE_URL}NT_logo.png`}
-          alt="Nhat Tinh"
-          style={{ height: 82, width: 'auto', flexShrink: 0, objectFit: 'contain' }}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+          <LanguageToggle />
+          <img
+            src={`${import.meta.env.BASE_URL}NT_logo.png`}
+            alt="Nhat Tinh"
+            style={{ height: 82, width: 'auto', objectFit: 'contain' }}
+          />
+        </div>
       </div>
 
       <div style={{ height: '1px', background: '#1a3048', flexShrink: 0, marginBottom: '20px' }} />
@@ -314,7 +331,7 @@ export default function SlideView() {
 
         {/* Roles grid */}
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '5px', width: '288px', flexShrink: 0 }}>
-          {ROLES.map(r => {
+          {roles.map(r => {
             const isActive = r.chips.some(id => activeChips.includes(id)) && activeChips.every(id => r.chips.includes(id))
             return (
               <div
@@ -352,6 +369,7 @@ export default function SlideView() {
                 activeChips={activeChips}
                 onHover={hoverChip}
                 onChipClick={id => { if (id === 'mes') setMesOpen(true) }}
+                stageLabels={t.stages}
               />
             </div>
 
@@ -404,7 +422,7 @@ export default function SlideView() {
                 </div>
               ) : (
                 <div className="hint-text">
-                  di chuột module hoặc danh sách bên trái để xem mô tả →
+                  {t.slide.hoverHint}
                 </div>
               )}
             </div>

@@ -1,5 +1,6 @@
-import CaptureGalleryModal from './CaptureGalleryModal'
+import CaptureGalleryModal, { localizeSlides } from './CaptureGalleryModal'
 import type { CaptureSlide } from './CaptureGalleryModal'
+import { useI18n } from './i18n'
 
 const SLIDES: CaptureSlide[] = [
   {
@@ -29,16 +30,16 @@ const SLIDES: CaptureSlide[] = [
 ]
 
 export default function QualityTraceabilityModal({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n()
   return (
     <CaptureGalleryModal
       onClose={onClose}
       eyebrow="NT-MES · Quality & Traceability"
       title={['QUALITY /', 'TRACEABILITY']}
       accent="#4ade80"
-      subtitlePrefix="Chất lượng và truy xuất trên NT-MES"
-      slides={SLIDES}
+      subtitlePrefix={t.gallery.qualitySubtitle}
+      slides={localizeSlides(SLIDES, t)}
       statsRight="Inspection · LOT / Batch · Genealogy · NCR"
-      hint="← → hoặc bấm hình để xem màn hình khác"
     />
   )
 }

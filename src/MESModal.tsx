@@ -1,48 +1,28 @@
 import { useEffect, useState } from 'react'
 import ProcessFlowModal from './ProcessFlowModal'
+import { LanguageToggle, useI18n } from './i18n'
+import type { Translations } from './i18n/translations'
 
-const MESA = [
-  {
-    id: 1, side: 'L', label: 'Lập lịch chi tiết', color: '#f43f5e',
-    desc: 'Quản lý lệnh và công việc sản xuất; lập lịch bằng bảng, lịch và Gantt; điều chỉnh thời gian, gán trạm–nhân sự, cảnh báo xung đột; phát hành lịch công đoạn và liên kết kế hoạch với MRP.',
-  },
-  {
-    id: 2, side: 'L', label: 'Phân bổ nguồn lực', color: '#f97316',
-    desc: 'Quản lý nhà máy, dây chuyền, trạm, máy và tài sản; theo dõi khả dụng thiết bị, tình trạng vật tư; hỗ trợ gán nhân sự và đánh giá kỹ năng phù hợp với công đoạn.',
-  },
-  {
-    id: 3, side: 'L', label: 'Điều phối sản xuất', color: '#3b82f6',
-    desc: 'Phát hành và theo dõi lệnh; cung cấp hàng đợi theo trạm; hỗ trợ thực hiện và hoàn tất công việc; ghi nhận tiến độ, sản lượng, phế phẩm, thời gian, tiêu hao và các tình trạng bị chặn.',
-  },
-  {
-    id: 4, side: 'L', label: 'Quản lý bảo trì', color: '#eab308',
-    desc: 'Quản lý tài sản và liên kết máy–trạm; theo dõi trạng thái khả dụng; tổ chức bảo trì sự cố và bảo trì kế hoạch; ghi nhận công việc, vật tư, nhân công và chi phí; theo dõi đồng hồ, SLA và độ tin cậy thiết bị.',
-  },
-  {
-    id: 5, side: 'L', label: 'Phân tích hiệu suất', color: '#10b981',
-    desc: 'Theo dõi tiến độ và sản lượng; phân tích OEE, tổn thất, phế phẩm và xu hướng; giám sát Andon; theo dõi KPI bảo trì, độ tin cậy, SLA và chi phí; cung cấp dashboard, báo cáo và xuất dữ liệu.',
-  },
-  {
-    id: 6, side: 'R', label: 'Tài liệu & Quy trình', color: '#f43f5e',
-    desc: 'Quản lý BOM, cây công đoạn, định mức và thông số kỹ thuật; đồng thời cung cấp tài liệu, hướng dẫn và thông tin công nghệ theo đúng ngữ cảnh lệnh, công việc và trạm vận hành.',
-  },
-  {
-    id: 7, side: 'R', label: 'Thu thập dữ liệu', color: '#10b981',
-    desc: 'Thu nhận từ terminal và thiết bị các dữ liệu sản lượng, phế phẩm, thời gian, nhân công, vật tư, sản phẩm và lô; đồng thời ghi nhận kết quả QC, đồng hồ, tín hiệu và trạng thái thiết bị.',
-  },
-  {
-    id: 8, side: 'R', label: 'Quản lý nhân lực', color: '#f97316',
-    desc: 'Hỗ trợ gán nhân sự cho lịch và công việc; ghi nhận thời gian lao động; quản lý kỹ năng, chứng nhận và đối chiếu năng lực nhân sự với yêu cầu của từng công đoạn.',
-  },
-  {
-    id: 9, side: 'R', label: 'Quản lý chất lượng', color: '#eab308',
-    desc: 'Quản lý biểu mẫu, phiên bản, tiêu chí và phiếu kiểm tra; đánh giá PASS/FAIL; gửi duyệt, phê duyệt, từ chối hoặc yêu cầu sửa; lưu bằng chứng, tệp đính kèm và lịch sử xử lý.',
-  },
-  {
-    id: 10, side: 'R', label: 'Theo dõi & Truy xuất', color: '#3b82f6',
-    desc: 'Quản lý lô, số sê-ri, container và quan hệ đầu vào–đầu ra; tìm kiếm, truy xuất xuôi/ngược; xem lịch sử sự kiện, khoanh vùng ảnh hưởng, hỗ trợ thu hồi và lập báo cáo truy xuất.',
-  },
+const MESA_META = [
+  { id: 1 as const, side: 'L', color: '#f43f5e' },
+  { id: 2 as const, side: 'L', color: '#f97316' },
+  { id: 3 as const, side: 'L', color: '#3b82f6' },
+  { id: 4 as const, side: 'L', color: '#eab308' },
+  { id: 5 as const, side: 'L', color: '#10b981' },
+  { id: 6 as const, side: 'R', color: '#f43f5e' },
+  { id: 7 as const, side: 'R', color: '#10b981' },
+  { id: 8 as const, side: 'R', color: '#f97316' },
+  { id: 9 as const, side: 'R', color: '#eab308' },
+  { id: 10 as const, side: 'R', color: '#3b82f6' },
 ]
+
+function buildMesa(t: Translations) {
+  return MESA_META.map(m => ({
+    ...m,
+    label: t.mes.items[m.id].label,
+    desc: t.mes.items[m.id].desc,
+  }))
+}
 
 // SVG layout constants — widened to 1280 for 1080p projector, inner diagram shifted +110
 const VW = 1280, VH = 416
@@ -96,9 +76,11 @@ const SF_FLOWS = [
   { label: 'Events',           y: Y_CENTERS[4] },
 ]
 
-type MesaItem = typeof MESA[0]
+type MesaItem = ReturnType<typeof buildMesa>[0]
 
 export default function MESModal({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n()
+  const MESA = buildMesa(t)
   const [sel, setSel] = useState<number | null>(null)
   const [hovered, setHovered] = useState<number | null>(null)
   const [hubHot, setHubHot] = useState(false)
@@ -106,7 +88,7 @@ export default function MESModal({ onClose }: { onClose: () => void }) {
   const selected = sel !== null ? MESA.find(f => f.id === sel) ?? null : null
   const preview = selected ?? (hovered !== null ? MESA.find(f => f.id === hovered) ?? null : null)
 
-  const leftItems  = MESA.filter(f => f.side === 'L')
+  const leftItems = MESA.filter(f => f.side === 'L')
   const rightItems = MESA.filter(f => f.side === 'R')
 
   useEffect(() => {
@@ -196,10 +178,13 @@ export default function MESModal({ onClose }: { onClose: () => void }) {
               </span>
             </div>
             <div style={{ fontSize: '16px', color: '#7aadde', marginTop: '6px', lineHeight: 1.5 }}>
-              Nền tảng quản lý và điều hành sản xuất, hỗ trợ xuyên suốt từ chuẩn bị sản phẩm–quy trình đến phân tích hiệu suất.
+              {t.mes.subtitle}
             </div>
           </div>
-          <button onClick={onClose} className="back-btn">← Quay lại</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+            <LanguageToggle compact />
+            <button onClick={onClose} className="back-btn">{t.common.back}</button>
+          </div>
         </div>
 
         <div style={{ height: '1px', background: '#1a3048', flexShrink: 0, marginBottom: '8px' }} />
@@ -328,7 +313,7 @@ export default function MESModal({ onClose }: { onClose: () => void }) {
                     marginLeft: 'auto', color: '#7aadde', fontSize: 11,
                     fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.4px',
                   }}>
-                    nhấn lần nữa để bỏ chọn
+                    {t.mes.deselect}
                   </span>
                 )}
               </div>
@@ -354,16 +339,16 @@ export default function MESModal({ onClose }: { onClose: () => void }) {
                   marginLeft: 'auto', color: '#7aadde', fontSize: 11,
                   fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.4px',
                 }}>
-                  Nhấn để mở Setup Sequence →
+                  {t.mes.openSetup}
                 </span>
               </div>
               <div style={{ color: '#cbd5e1', fontSize: 13, lineHeight: 1.5, paddingLeft: 19 }}>
-                Chuỗi Technology + Shop-floor Structure → Resource Binding → Manufacturing Order → Planning → Execution → Quality / Performance
+                {t.mes.hubDesc}
               </div>
             </div>
           ) : (
             <div className="hint-text">
-              di chuột module, hoặc nhấn NT-MES để xem chuỗi điều hành →
+              {t.mes.hoverHint}
             </div>
           )}
         </div>

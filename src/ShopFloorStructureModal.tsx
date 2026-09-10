@@ -1,5 +1,6 @@
-import CaptureGalleryModal from './CaptureGalleryModal'
+import CaptureGalleryModal, { localizeSlides } from './CaptureGalleryModal'
 import type { CaptureSlide } from './CaptureGalleryModal'
+import { useI18n } from './i18n'
 
 const SLIDES: CaptureSlide[] = [
   {
@@ -101,16 +102,17 @@ const SLIDES: CaptureSlide[] = [
 ]
 
 export default function ShopFloorStructureModal({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n()
   return (
     <CaptureGalleryModal
       onClose={onClose}
       eyebrow="NT-MES · Factory Structure"
       title={['SHOP-FLOOR', 'STRUCTURE']}
       accent="#2dd4bf"
-      subtitlePrefix="Cấu hình nhà máy trên NT-MES"
-      slides={SLIDES}
+      subtitlePrefix={t.gallery.shopSubtitle}
+      slides={localizeSlides(SLIDES, t)}
       statsRight="12 Factory · 22 Division · 49 Line · 180 Workstation"
-      hint="← → hoặc bấm hình để xem mô hình khác"
+      hint={t.common.galleryHintAlt}
     />
   )
 }
