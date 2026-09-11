@@ -6,6 +6,7 @@ import PlanOnWorkstationModal from './PlanOnWorkstationModal'
 import ProductionExecutionModal from './ProductionExecutionModal'
 import QualityTraceabilityModal from './QualityTraceabilityModal'
 import ProductionPerformanceModal from './ProductionPerformanceModal'
+import FitViewport from './FitViewport'
 import { LanguageToggle, useI18n } from './i18n'
 import type { Translations } from './i18n/translations'
 
@@ -198,13 +199,18 @@ export default function ProcessFlowModal({ onClose }: { onClose: () => void }) {
     <div style={{
       position: 'fixed', inset: 0, zIndex: 210,
       background: '#0c1c2e',
-      fontFamily: 'Inter, sans-serif',
-      display: 'flex',
-      flexDirection: 'column',
-      padding: '32px 60px 24px',
-      boxSizing: 'border-box',
       overflow: 'hidden',
     }}>
+      <FitViewport width={1920} height={900} background="#0c1c2e">
+        <div style={{
+          width: '100%', height: '100%',
+          fontFamily: 'Inter, sans-serif',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '28px 40px 20px',
+          boxSizing: 'border-box',
+          overflow: 'hidden',
+        }}>
       <div style={{
         flexShrink: 0,
         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
@@ -374,6 +380,8 @@ export default function ProcessFlowModal({ onClose }: { onClose: () => void }) {
           </div>
         )}
       </div>
+        </div>
+      </FitViewport>
 
       {openId === 'shop' && (
         <ShopFloorStructureModal onClose={() => setOpenId(null)} />

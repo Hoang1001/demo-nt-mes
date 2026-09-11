@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import ProcessFlowModal from './ProcessFlowModal'
+import FitViewport from './FitViewport'
 import { LanguageToggle, useI18n } from './i18n'
 import type { Translations } from './i18n/translations'
 
@@ -149,13 +150,18 @@ export default function MESModal({ onClose }: { onClose: () => void }) {
     <div style={{
       position: 'fixed', inset: 0, zIndex: 200,
       background: '#0c1c2e',
-      fontFamily: 'Inter, sans-serif',
-      display: 'flex',
-      flexDirection: 'column',
-      padding: '32px 60px 24px',
-      boxSizing: 'border-box',
       overflow: 'hidden',
     }}>
+      <FitViewport width={1520} height={900} background="#0c1c2e">
+        <div style={{
+          width: '100%', height: '100%',
+          fontFamily: 'Inter, sans-serif',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '32px 48px 24px',
+          boxSizing: 'border-box',
+          overflow: 'hidden',
+        }}>
         {/* ── Header ── */}
         <div style={{
           flexShrink: 0,
@@ -352,6 +358,8 @@ export default function MESModal({ onClose }: { onClose: () => void }) {
             </div>
           )}
         </div>
+        </div>
+      </FitViewport>
 
       {processOpen && <ProcessFlowModal onClose={() => setProcessOpen(false)} />}
     </div>

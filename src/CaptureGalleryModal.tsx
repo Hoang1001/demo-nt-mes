@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
+import FitViewport from './FitViewport'
 import { LanguageToggle, chipLabel, useI18n } from './i18n'
 import type { Translations } from './i18n/translations'
 
@@ -64,10 +65,16 @@ export default function CaptureGalleryModal({
     inset: 0,
     zIndex: 220,
     background: '#0c1c2e',
+    overflow: 'hidden',
+  } as CSSProperties
+
+  const stageStyle = {
+    width: '100%',
+    height: '100%',
     fontFamily: 'Inter, sans-serif',
     display: 'flex',
     flexDirection: 'column',
-    padding: '24px 48px 20px',
+    padding: '24px 40px 20px',
     boxSizing: 'border-box',
     overflow: 'hidden',
   } as CSSProperties
@@ -101,6 +108,8 @@ export default function CaptureGalleryModal({
 
   return (
     <div style={rootStyle}>
+      <FitViewport width={1480} height={900} background="#0c1c2e">
+        <div style={stageStyle}>
       <div style={{
         flexShrink: 0,
         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
@@ -252,6 +261,8 @@ export default function CaptureGalleryModal({
           {resolvedHint}
         </div>
       </div>
+        </div>
+      </FitViewport>
     </div>
   )
 }

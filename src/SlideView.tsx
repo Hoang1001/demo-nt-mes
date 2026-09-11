@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import MESModal from './MESModal'
+import FitViewport from './FitViewport'
 import { LanguageToggle, useI18n } from './i18n'
 import type { Translations } from './i18n/translations'
 
@@ -280,29 +281,31 @@ export default function SlideView() {
   }
 
   return (
-    <div style={{
-      width: '100vw', height: '100vh',
-      background: '#0c1c2e',
-      fontFamily: 'Inter, sans-serif',
-      display: 'flex',
-      flexDirection: 'column',
-      boxSizing: 'border-box',
-      padding: '32px 60px 24px',
-      overflow: 'hidden',
-    }}>
+    <div style={{ width: '100vw', height: '100vh', background: '#0c1c2e', overflow: 'hidden' }}>
+      <FitViewport width={1520} height={900} background="#0c1c2e">
+        <div style={{
+          width: '100%', height: '100%',
+          background: '#0c1c2e',
+          fontFamily: 'Inter, sans-serif',
+          display: 'flex',
+          flexDirection: 'column',
+          boxSizing: 'border-box',
+          padding: '32px 48px 24px',
+          overflow: 'hidden',
+        }}>
       {/* ── Header ── */}
       <div style={{
         flexShrink: 0, marginBottom: '20px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px',
       }}>
-        <div>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{
             fontSize: '10px', color: '#7aadde', letterSpacing: '4px',
             fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', marginBottom: '6px',
           }}>
             {t.slide.eyebrow}
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '44px', fontWeight: 800, color: '#f1f5f9', letterSpacing: '-2px', lineHeight: 1 }}>
               MATERIAL
             </span>
@@ -310,7 +313,7 @@ export default function SlideView() {
               FLOW
             </span>
           </div>
-          <div style={{ fontSize: '16px', color: '#7aadde', marginTop: '6px', lineHeight: 1.5 }}>
+          <div style={{ fontSize: '16px', color: '#7aadde', marginTop: '6px', lineHeight: 1.5, maxWidth: '920px' }}>
             {t.slide.tagline}
           </div>
         </div>
@@ -319,7 +322,7 @@ export default function SlideView() {
           <img
             src={`${import.meta.env.BASE_URL}NT_logo.png`}
             alt="Nhat Tinh"
-            style={{ height: 82, width: 'auto', objectFit: 'contain' }}
+            style={{ height: 72, width: 'auto', objectFit: 'contain' }}
           />
         </div>
       </div>
@@ -327,10 +330,10 @@ export default function SlideView() {
       <div style={{ height: '1px', background: '#1a3048', flexShrink: 0, marginBottom: '20px' }} />
 
       {/* ── Main content: roles + diagram ── */}
-      <div style={{ display: 'flex', gap: '36px', flex: 1, minHeight: 0, alignItems: 'stretch' }}>
+      <div style={{ display: 'flex', gap: '28px', flex: 1, minHeight: 0, alignItems: 'stretch' }}>
 
         {/* Roles grid */}
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '5px', width: '288px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '5px', width: '280px', flexShrink: 0 }}>
           {roles.map(r => {
             const isActive = r.chips.some(id => activeChips.includes(id)) && activeChips.every(id => r.chips.includes(id))
             return (
@@ -429,6 +432,8 @@ export default function SlideView() {
           </div>
         </div>
       </div>
+        </div>
+      </FitViewport>
 
       {mesOpen && <MESModal onClose={() => setMesOpen(false)} />}
     </div>
