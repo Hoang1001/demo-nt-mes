@@ -15,7 +15,8 @@ type Props = {
 
 /**
  * Centers a fixed design-size stage and scales it to fit the viewport.
- * Keeps presentation layouts proportional when the window grows or shrinks.
+ * On phones/tablets held upright, the stage is rotated so it always
+ * presents as a landscape desktop layout.
  */
 export default function FitViewport({
   width,
@@ -29,6 +30,8 @@ export default function FitViewport({
 }: Props) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
+  const [forceLandscape, setForceLandscape] = useState(false)
+  const [hostSize, setHostSize] = useState({ w: 0, h: 0 })
 
   useEffect(() => {
     const host = hostRef.current
@@ -38,7 +41,16 @@ export default function FitViewport({
       const w = host.clientWidth
       const h = host.clientHeight
       if (w <= 0 || h <= 0) return
-      const next = Math.min(w / width, h / height, maxScale)
+
+      setHostSize({ w, h })
+
+      // Portrait phone/tablet: treat available space as landscape after 90° rotate
+      const portrait = h > w
+      setForceLandscape(portrait)
+      const availW = portrait ? h : w
+      const availH = portrait ? w : h
+
+      const next = Math.min(availW / width, availH / height, maxScale)
       setScale(Math.max(next, minScale))
     }
 
@@ -46,9 +58,11 @@ export default function FitViewport({
     const ro = new ResizeObserver(update)
     ro.observe(host)
     window.addEventListener('resize', update)
+    window.addEventListener('orientationchange', update)
     return () => {
       ro.disconnect()
       window.removeEventListener('resize', update)
+      window.removeEventListener('orientationchange', update)
     }
   }, [width, height, maxScale, minScale])
 
@@ -61,23 +75,47 @@ export default function FitViewport({
         height: '100%',
         overflow: 'hidden',
         background,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
         ...style,
       }}
     >
       <div
-        style={{
-          width,
-          height,
-          flexShrink: 0,
-          transform: `scale(${scale})`,
-          transformOrigin: 'center center',
-          ...stageStyle,
-        }}
+        style={
+          forceLandscape
+            ? {
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                width: hostSize.h,
+                height: hostSize.w,
+                transform: 'translate(-50%, -50%) rotate(90deg)',
+                transformOrigin: 'center center',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                background,
+              }
+            : {
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }
+        }
       >
-        {children}
+        <div
+          style={{
+            width,
+            height,
+            flexShrink: 0,
+            transform: `scale(${scale})`,
+            transformOrigin: 'center center',
+            ...stageStyle,
+          }}
+        >
+          {children}
+        </div>
       </div>
     </div>
   )

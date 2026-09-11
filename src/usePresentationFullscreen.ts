@@ -1,5 +1,24 @@
 import { useCallback, useEffect, useState } from 'react'
 
+async function lockLandscape() {
+  try {
+    const orientation = screen.orientation as ScreenOrientation & {
+      lock?: (orientation: string) => Promise<void>
+    }
+    if (orientation?.lock) await orientation.lock('landscape')
+  } catch {
+    /* iOS / unsupported — FitViewport CSS rotate handles this */
+  }
+}
+
+async function unlockOrientation() {
+  try {
+    screen.orientation?.unlock?.()
+  } catch {
+    /* ignore */
+  }
+}
+
 async function requestFs(el: Element = document.documentElement) {
   const anyEl = el as HTMLElement & {
     webkitRequestFullscreen?: () => Promise<void> | void
@@ -34,6 +53,7 @@ export function usePresentationFullscreen() {
   const enter = useCallback(async () => {
     try {
       if (!isFullscreenActive()) await requestFs()
+      await lockLandscape()
       setNeedsGesture(false)
       setIsFullscreen(true)
       return true
@@ -45,6 +65,7 @@ export function usePresentationFullscreen() {
 
   const exit = useCallback(async () => {
     try {
+      await unlockOrientation()
       await exitFs()
     } catch {
       /* ignore */

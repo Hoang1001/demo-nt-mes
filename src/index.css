@@ -7,6 +7,9 @@ html, body, #root {
   height: 100%;
   overflow: hidden;
   background: #0c1c2e;
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 @keyframes flowMove {
