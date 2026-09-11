@@ -16,6 +16,11 @@ const vi = {
       'Dòng sông vật lý của nhà máy — mọi hệ thống phần mềm đều được xây dựng xung quanh để quan sát, điều tiết và phản ánh nó',
     hoverHint: 'di chuột module hoặc danh sách bên trái để xem mô tả →',
     openMes: 'Nhấn để mở NT-MES',
+    fullscreenTitle: 'Chế độ trình bày',
+    fullscreenHint: 'Nhấn để mở toàn màn hình',
+    fullscreenSkip: 'Tiếp tục cửa sổ',
+    fullscreenEnter: 'Toàn màn hình',
+    fullscreenExit: 'Thoát',
   },
   stages: [
     ['Nhà', 'cung cấp'],
@@ -221,6 +226,11 @@ const en: Translations = {
       'The physical river of the plant — every software system is built around it to observe, regulate, and reflect it',
     hoverHint: 'hover a module or the list on the left to see details →',
     openMes: 'Click to open NT-MES',
+    fullscreenTitle: 'Presentation mode',
+    fullscreenHint: 'Click to enter fullscreen',
+    fullscreenSkip: 'Continue in window',
+    fullscreenEnter: 'Fullscreen',
+    fullscreenExit: 'Exit',
   },
   stages: [
     ['Supplier'],

@@ -3,6 +3,7 @@ import MESModal from './MESModal'
 import FitViewport from './FitViewport'
 import { LanguageToggle, useI18n } from './i18n'
 import type { Translations } from './i18n/translations'
+import { usePresentationFullscreen } from './usePresentationFullscreen'
 
 // ─── STATIC LAYOUT (language-independent) ────────────────────────────────────
 const STAGE_META = [
@@ -244,6 +245,7 @@ export default function SlideView() {
   const [activeChips, setActiveChips] = useState<string[]>([])
   const [panelInfo, setPanelInfo] = useState<PanelInfo | null>(null)
   const [mesOpen, setMesOpen] = useState(false)
+  const { isFullscreen, needsGesture, enter, toggle, dismissPrompt } = usePresentationFullscreen()
 
   useEffect(() => {
     setActiveChips([])
@@ -282,6 +284,66 @@ export default function SlideView() {
 
   return (
     <div style={{ width: '100vw', height: '100vh', background: '#0c1c2e', overflow: 'hidden' }}>
+      {needsGesture && !isFullscreen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={t.slide.fullscreenTitle}
+          onClick={() => { void enter() }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 500,
+            background: 'rgba(7, 16, 31, 0.92)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
+            fontFamily: 'Inter, sans-serif',
+          }}
+        >
+          <div style={{ textAlign: 'center', maxWidth: 420, padding: 24 }} onClick={e => e.stopPropagation()}>
+            <div style={{
+              fontSize: 11, color: '#7aadde', letterSpacing: 3,
+              fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', marginBottom: 12,
+            }}>
+              {t.slide.fullscreenTitle}
+            </div>
+            <button
+              type="button"
+              onClick={() => { void enter() }}
+              style={{
+                background: '#0ea5e9',
+                color: '#0c1c2e',
+                border: 'none',
+                borderRadius: 10,
+                padding: '14px 28px',
+                fontSize: 16,
+                fontWeight: 700,
+                fontFamily: 'Inter, sans-serif',
+                cursor: 'pointer',
+              }}
+            >
+              {t.slide.fullscreenHint}
+            </button>
+            <div style={{ marginTop: 16 }}>
+              <button
+                type="button"
+                onClick={dismissPrompt}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#7aadde',
+                  fontSize: 13,
+                  fontFamily: 'JetBrains Mono, monospace',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: 3,
+                }}
+              >
+                {t.slide.fullscreenSkip}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <FitViewport width={1520} height={900} background="#0c1c2e">
         <div style={{
           width: '100%', height: '100%',
@@ -317,7 +379,16 @@ export default function SlideView() {
             {t.slide.tagline}
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+          <button
+            type="button"
+            onClick={() => { void toggle() }}
+            className="back-btn"
+            style={{ padding: '7px 12px', fontSize: 12 }}
+            title={isFullscreen ? t.slide.fullscreenExit : t.slide.fullscreenEnter}
+          >
+            {isFullscreen ? t.slide.fullscreenExit : t.slide.fullscreenEnter}
+          </button>
           <LanguageToggle />
           <img
             src={`${import.meta.env.BASE_URL}NT_logo.png`}
